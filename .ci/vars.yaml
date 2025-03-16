@@ -1,0 +1,20 @@
+bitbucket_user: concourse
+bitbucket_password: melYC4enjH6PSfeXg4Ioj8FMvoaj3cXmGF8e
+bitbucket_url: https://bitbucket.cloud/
+
+target: main
+concourse_url: https://ci.fabric8.ru
+
+
+git_url: https://bitbucket.cloud/scm/devops/teams_groups.git
+
+ipa_host: dc-ldap-master.dclab.local
+ipa_user: tech
+ipa_password: 1a15ceb5c6
+
+concourse_user: admin
+concourse_password: 3FmLcM3QcOVJDDKiFopuUoDF
+
+registry_user: dc-dockeruser-01
+registry_password: fYQX5yEWDFtS61HrAbjtPj9f
+registry_url: docker.fabric8.ru/openvpn-ldap

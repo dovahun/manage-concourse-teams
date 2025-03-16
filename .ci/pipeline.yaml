@@ -1,0 +1,104 @@
+resource_types:
+
+  - name: bitbucket-build-status
+    type: docker-image
+    source:
+      repository: shyxormz/bitbucket-build-status-resource
+
+  - name: concourse-pipeline
+    type: docker-image
+    source:
+      repository: concourse/concourse-pipeline-resource
+
+resource:
+
+  - name: master
+    type: git
+    source:
+      uri: ((git_url))
+      branches: 'master'
+      password: ((git_url))
+      ignore_paths:
+        - .ci
+
+  - name: ci
+    type: git
+    source:
+      uri: ((git_url))
+      branches: 'master'
+      password: ((bitbucket_password))
+      paths:
+        - .ci
+
+jobs:
+  - name: Apply new pipeline
+    plan:
+      - get: ci
+        trigger: true
+
+      - put: pipeline
+        params:
+          pipelines:
+          - config_file: ci/.ci/pipeline.yaml
+            name: spinnaker_registry_management
+            team: devops
+            vars_files:
+            - ci/.ci/vars.yaml
+
+  - name: Create teams and groups
+    plan:
+      - get: master
+        trigger: true
+
+      - task: iap_groups_add
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+              source:
+              username: {{registry_user}}
+              password: {{registry_password}}
+              repository: docker.fabric8.ru/devops/ipa_client_concourse_teams
+              tag: 'latest'
+          run:
+            path: sh
+            args:
+            - -ec
+            - |
+              python3 /ipa_group.py -f concourse_teams -u ((ipa_host)) -l ((ipa_user)) -p ((ipa_password))
+          dir: master
+        inputs:
+          - name: master
+
+      - task: teams_add
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+              source:
+              username: {{registry_user}}
+              password: {{registry_password}}
+              repository: docker.fabric8.ru/devops/fly_client_concourse_teams
+              tag: 'latest'
+          run:
+            path: sh
+            args:
+            - -ec
+            - |
+              bash add_team.sh ((target)) ((concourse_user)) ((concourse_password)) ((concourse_url)) ((target)) concourse_teams
+          dir: master
+        inputs:
+          - name: master
+
+  - name: launch
+    on_success:
+      put: build_status
+      params:
+        build_status: SUCCESSFUL
+        repository: master
+
+    on_failure:
+      put: build_status
+      params:
+        build_status: FAILED
+        repository: master

@@ -1,0 +1,15 @@
+
+  roles:
+  - name: owner
+    local:
+      users: [admin]
+  - name: member
+    local:
+      users: [admin]
+    ldap:
+      groups:  ['cucumber2']
+  - name: viewer
+    local:
+      users: [admin]
+    ldap:
+      groups: ['concourse-users']
